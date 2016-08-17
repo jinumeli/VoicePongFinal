@@ -1,0 +1,196 @@
+
+<html>
+	<head>
+		<meta charset="utf-8"/>
+   		<script language="javascript" type="text/javascript" src="lib/p5.min.js"></script>
+    	<script language="javascript" type="text/javascript" src="lib/p5.dom.js"></script> 
+    	<script language="javascript" type="text/javascript" src="lib/p5.sound.js"></script> 
+    	<script language="javascript" type="text/javascript" src="pong.js"></script> 
+   		<script language="javascript" type="text/javascript" src="lib/helpers.js"></script> 
+    	<script language="javascript" type="text/javascript" src="lib/p5.play.js"></script> 
+		<script src="peer.min.js"></script>
+		<link rel="stylesheet" media="screen" href="https://fontlibrary.org/face/8bit-wonder" type="text/css"/>
+		<script src="sweetalert.min.js">
+
+		</script>
+		<link rel="stylesheet" type="text/css" href="sweetalert.css">
+		<style type="text/css"> 
+		body {
+
+			width: 800px;
+			padding: 0; 
+			margin-left: auto;
+			margin-right: auto;
+			background-color: 000000;
+			} 
+			#typeID{
+						margin-right: auto;
+						margin-left: auto;
+						width: 200px;
+						margin-top: 20px;
+					}
+					#myID{
+						font-size: 20pt;
+						font-family: arial;
+						color:white;
+						width: 350px;
+						margin-left: auto;
+						margin-right: auto;
+						margin-top: 10px;
+					}
+					.title{
+
+					 color: #ffffff;
+					 text-align: center;
+  	  				 font-family: '8BITWONDERNominal'; 
+    			     font-weight: normal; 
+   					 font-style: normal; 
+   					 line-height: 3em;
+  					 padding-top: 10px;
+  				     padding-bottom: 10px;
+
+
+					}
+
+					canvas {
+    				
+   					padding-left: 0;
+    				padding-right: 0;
+				    margin-left: auto;
+    				margin-right: auto;
+    				display: block;
+   					width: 800px;
+   					background-color: #ffffff;
+
+					
+					}
+					h1 {
+    				font-size: 250%;
+					}
+			</style>
+		<script type="text/javascript">
+
+			//this is myId;
+			var mypeerId = null;
+			var otherId = null;
+			var myElement,otherElement;
+			var myRole = false;
+			var paddle1,paddle2;
+			var peer = null;
+			var connected = false;
+
+			//this is OtherId
+			var connection = null;
+			
+			var init = function() {
+					
+				peer = new Peer({host: '104.131.82.13', port: 9000, path: '/'});
+				
+				peer.on('open', function(id) {
+				  console.log('My peer ID is: ' + id);
+				  mypeerId = id;
+				  document.getElementById('myID').innerHTML = "My ID: "+id;
+				});
+				
+				peer.on('connection', function(conn) {
+					connection = conn;
+				
+					connection.on('open', function() {
+						document.getElementById('chatlog').innerHTML += "Connection Established";
+						connected = true;
+					});
+					
+					connection.on('data', function(data) {
+
+						if( data.role == "caller" && myRole === false){
+							myRole = "callee";
+							//I am a callee!
+							assignElement( myRole );
+						}
+						var old2 = paddle2.position.y;
+						paddle2.position.y=lerp(old2, map(input.getLevel()*2, 0, 1, 400, 0), 0.2);
+						if (myRole == "callee" && "ballx" in data){
+							// console.log("data ballee check");
+							ball.position.x = data.ballx;
+              ball.position.y = data.bally;
+              ball.velocity.x = data.ballvelx;
+              ball.velocity.y = data.ballvely;
+						}
+					});
+				});
+
+			};
+
+			var placecall = function() {
+
+				connection = peer.connect(document.getElementById('other_peer_id').value);
+
+				connection.on('open', function() {
+
+					// updating Status //
+					document.getElementById('chatlog').innerHTML += "Connection Established";
+					if( myRole === false ){
+					myRole = "caller";
+					assignElement( myRole );
+					}
+					else{
+						console.log("call_already_placed!");
+					}
+
+					connected = true;
+
+				});
+
+				connection.on('data', function(data) {
+				
+					paddle2.position.y=map(data.vol*2, 0, 1, 400, 0);
+				});
+			};	
+		
+		</script>
+	</head>
+	
+	<body onload="init()">
+		
+		<div id="myID"></div>
+		<div id="typeID">
+	   
+		<input type="text" id="other_peer_id" value="PeerID to Call">
+		<input type="button" value="Call" onclick="placecall()"><br /></div>
+		<div id="chatlog"></div>
+		<div class="title">
+  <h1>Voice Pong</h1>
+</div>
+
+	</body>
+
+	<script>
+
+	function assignElement( role ){
+
+				var redBox = document.getElementById('redBox');
+				var greenBox = document.getElementById('greenBox');
+
+				if( role == "caller" ){
+					//go red;
+					// myElement = redBox;
+					// otherElement = greenBox;
+					paddle1=paddleA;
+					paddle2=paddleB;
+
+					console.log("I'm the caller!");
+				}
+				else if( role == "callee" ){
+					//go green;
+					// myElement = greenBox;
+					// otherElement = redBox;
+					paddle1=paddleB;
+					paddle2=paddleA;
+					console.log("I'm the callee!");
+				}
+
+	}
+
+	</script>
+
+</html>
